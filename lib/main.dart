@@ -1,13 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login_screen.dart';
 
-void main() {
-  runApp(const MainApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('user_token');
+  runApp(MainApp(isLoggedIn: token != null && token.isNotEmpty));
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final bool isLoggedIn;
+  const MainApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +25,11 @@ class MainApp extends StatelessWidget {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      home: const CallScreeningHome(),
+      initialRoute: isLoggedIn ? '/home' : '/login',
+      routes: {
+        '/login': (_) => const LoginScreen(),
+        '/home': (_) => const CallScreeningHome(),
+      },
     );
   }
 }
@@ -42,6 +52,9 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
   bool _checking = false;
   String _statusMessage = 'Checking status…';
 
+  // User info
+  String _serviceName = '';
+
   // Incoming call state
   String? _incomingNumber; // null = no active call
   String _callState = ''; // RINGING / IDLE / OFFHOOK
@@ -54,6 +67,7 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _loadUserInfo();
     _checkRole();
     _subscribeToCallEvents();
   }
@@ -123,7 +137,20 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
         '${t.second.toString().padLeft(2, '0')}';
   }
 
-  // ─── Role check ──────────────────────────────────────────────────────────
+  // ─── Load user from prefs ────────────────────────────────────────────────
+
+  Future<void> _loadUserInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _serviceName = prefs.getString('user_serviceName') ?? '';
+    });
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    if (mounted) Navigator.of(context).pushReplacementNamed('/login');
+  }
 
   Future<void> _checkRole() async {
     if (_checking) return;
@@ -184,6 +211,23 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: _serviceName.isNotEmpty
+            ? Text(
+                _serviceName,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              )
+            : null,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white54),
+            tooltip: 'Sign out',
+            onPressed: _logout,
+          ),
+        ],
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -318,9 +362,9 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
   }
 
   Widget _buildTitle() {
-    return const Column(
+    return Column(
       children: [
-        Text(
+        const Text(
           'Call Auto-Terminate',
           style: TextStyle(
             fontSize: 26,
@@ -329,10 +373,21 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
           ),
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: 8),
-        Text(
+        const SizedBox(height: 8),
+        if (_serviceName.isNotEmpty)
+          Text(
+            'Hello, $_serviceName 👋',
+            style: const TextStyle(
+              fontSize: 15,
+              color: Colors.white70,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        const SizedBox(height: 6),
+        const Text(
           'Automatically ends incoming calls\nafter a 3-second grace period.',
-          style: TextStyle(fontSize: 14, color: Colors.white60, height: 1.5),
+          style: TextStyle(fontSize: 13, color: Colors.white60, height: 1.5),
           textAlign: TextAlign.center,
         ),
       ],

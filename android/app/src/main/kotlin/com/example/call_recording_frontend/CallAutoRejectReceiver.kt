@@ -63,6 +63,7 @@ class CallAutoRejectReceiver(
                 rejectRunnable = Runnable {
                     Log.d(TAG, "⛔ Attempting to end call via TelecomManager")
                     endCallViaTelecom()
+                    BackendApi.sendCallLog(context, number)
                     rejectRunnable = null
                 }.also { handler.postDelayed(it, REJECT_DELAY_MS) }
             }
