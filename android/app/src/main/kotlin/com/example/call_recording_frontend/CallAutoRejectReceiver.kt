@@ -26,7 +26,10 @@ class CallAutoRejectReceiver(
 
     companion object {
         private const val TAG = "CallAutoReject"
-        private const val REJECT_DELAY_MS = 3000L
+        // 0 = reject the instant RINGING fires → caller gets busy signal immediately.
+        // Increase (e.g. 3000) if you want a grace period, but the sender will
+        // hear your phone ring for that many milliseconds before being cut off.
+        private const val REJECT_DELAY_MS = 0L
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -47,11 +50,18 @@ class CallAutoRejectReceiver(
 
         when (state) {
             TelephonyManager.EXTRA_STATE_RINGING -> {
+                // Guard: if a reject is already scheduled, don't reset it.
+                // Android 12+ sometimes fires RINGING twice (once without number,
+                // once with it). Resetting the timer would add an extra delay.
+                if (rejectRunnable != null) {
+                    Log.d(TAG, "📞 RINGING again (duplicate) — reject already scheduled, ignoring")
+                    return
+                }
                 Log.d(TAG, "📞 Incoming call from $number — scheduling reject in ${REJECT_DELAY_MS}ms")
-                cancelPending()
                 rejectRunnable = Runnable {
                     Log.d(TAG, "⛔ Attempting to end call via TelecomManager")
                     endCallViaTelecom()
+                    rejectRunnable = null
                 }.also { handler.postDelayed(it, REJECT_DELAY_MS) }
             }
             TelephonyManager.EXTRA_STATE_IDLE,

@@ -28,9 +28,13 @@ class MainActivity : FlutterActivity() {
     private var callReceiver: CallAutoRejectReceiver? = null
 
     private val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.ANSWER_PHONE_CALLS)
+        arrayOf(
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.ANSWER_PHONE_CALLS,
+            Manifest.permission.READ_CALL_LOG
+        )
     } else {
-        arrayOf(Manifest.permission.READ_PHONE_STATE)
+        arrayOf(Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
