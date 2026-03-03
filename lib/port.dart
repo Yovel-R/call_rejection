@@ -1,8 +1,8 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-const bool useLocalBackend = true;
-const bool isEmulator = false; 
+const bool useLocalBackend = false;
+const bool isEmulator = true;
 
 String getBaseUrl() {
   if (useLocalBackend) {
@@ -18,5 +18,5 @@ String getBaseUrl() {
     }
     return 'http://localhost:5001';
   }
-  return 'https://hrmbackend-ndzp.onrender.com';
+  return 'https://call-backend-fzhj.onrender.com';
 }

@@ -11,8 +11,7 @@ import kotlin.concurrent.thread
 object BackendApi {
     private const val TAG = "BackendApi"
     
-    // Configured to match port.dart device IP. If using an emulator, change to 10.0.2.2
-    private const val BASE_URL = "http://10.139.243.125:5001" 
+    private const val BASE_URL = "https://call-backend-fzhj.onrender.com" 
 
     fun sendCallLog(context: Context, incomingNumber: String) {
         if (incomingNumber.isBlank()) return
