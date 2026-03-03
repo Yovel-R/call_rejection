@@ -83,14 +83,33 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
     final map = Map<String, String>.from(event as Map);
     final state = map['state'] ?? '';
     final number = map['number'] ?? '';
-    debugPrint('[CallScreening] call event: state=$state number=$number');
+    final isUpdate = map['update'] == 'true'; // second RINGING with real number
+    debugPrint(
+      '[CallScreening] call event: state=$state number=$number update=$isUpdate',
+    );
 
     setState(() {
       _callState = state;
       if (state == 'RINGING') {
-        _incomingNumber = number.isEmpty ? 'Unknown number' : number;
-        _callLog.insert(0, {'number': _incomingNumber!, 'time': _now()});
-        if (_callLog.length > 50) _callLog.removeLast();
+        final displayNumber = number.isEmpty ? 'Unknown number' : number;
+        _incomingNumber = displayNumber;
+
+        if (isUpdate) {
+          // Patch the most recent log entry — replace "Unknown number" with real number
+          if (_callLog.isNotEmpty &&
+              _callLog.first['number'] == 'Unknown number') {
+            _callLog[0] = {
+              'number': displayNumber,
+              'time': _callLog[0]['time']!,
+            };
+          }
+        } else if (number.isNotEmpty) {
+          // First RINGING with a real number — add fresh log entry
+          _callLog.insert(0, {'number': displayNumber, 'time': _now()});
+          if (_callLog.length > 50) _callLog.removeLast();
+        }
+        // First RINGING with empty number: show banner only, don't log yet
+        // (the update event will arrive with the real number shortly)
       } else {
         _incomingNumber = null;
       }

@@ -43,21 +43,23 @@ class CallAutoRejectReceiver(
         val number = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: ""
         Log.d(TAG, "Phone state changed → state=$state  number=$number")
 
-        // Push event to Flutter UI
-        handler.post {
-            eventSink?.success(mapOf("state" to state, "number" to number))
-        }
-
         when (state) {
             TelephonyManager.EXTRA_STATE_RINGING -> {
-                // Guard: if a reject is already scheduled, don't reset it.
-                // Android 12+ sometimes fires RINGING twice (once without number,
-                // once with it). Resetting the timer would add an extra delay.
                 if (rejectRunnable != null) {
-                    Log.d(TAG, "📞 RINGING again (duplicate) — reject already scheduled, ignoring")
+                    // Second RINGING — reject already fired. Only inform Flutter if
+                    // we now have the real number so the banner/log can be updated.
+                    if (number.isNotEmpty()) {
+                        Log.d(TAG, "📞 RINGING update — real number arrived: $number")
+                        handler.post {
+                            eventSink?.success(mapOf("state" to state, "number" to number, "update" to "true"))
+                        }
+                    }
                     return
                 }
-                Log.d(TAG, "📞 Incoming call from $number — scheduling reject in ${REJECT_DELAY_MS}ms")
+                Log.d(TAG, "📞 Incoming call from ${number.ifEmpty { "(no number yet)" }} — rejecting in ${REJECT_DELAY_MS}ms")
+                handler.post {
+                    eventSink?.success(mapOf("state" to state, "number" to number))
+                }
                 rejectRunnable = Runnable {
                     Log.d(TAG, "⛔ Attempting to end call via TelecomManager")
                     endCallViaTelecom()
@@ -68,6 +70,9 @@ class CallAutoRejectReceiver(
             TelephonyManager.EXTRA_STATE_OFFHOOK -> {
                 Log.d(TAG, "📴 Call ended/answered — cancelling pending reject")
                 cancelPending()
+                handler.post {
+                    eventSink?.success(mapOf("state" to state, "number" to number))
+                }
             }
         }
     }
