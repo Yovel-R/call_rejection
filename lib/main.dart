@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -143,6 +144,65 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
   }
 
   Future<void> _logout() async {
+    final confirm = await showGeneralDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Dismiss',
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+          child: AlertDialog(
+            backgroundColor: const Color(0xFF1A1A4E),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Confirm Logout',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: const Text(
+              'Are you sure you want to log out?',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Logout'),
+              ),
+            ],
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curve = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+        );
+        return ScaleTransition(scale: curve, child: child);
+      },
+    );
+
+    if (confirm != true) return;
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     if (mounted) Navigator.of(context).pushReplacementNamed('/login');
@@ -207,23 +267,6 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: _serviceName.isNotEmpty
-            ? Text(
-                _serviceName,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              )
-            : null,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white54),
-            tooltip: 'Sign out',
-            onPressed: _logout,
-          ),
-        ],
-      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -239,6 +282,17 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
         child: SafeArea(
           child: Column(
             children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0, top: 4.0),
+                  child: IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.white54),
+                    tooltip: 'Sign out',
+                    onPressed: _logout,
+                  ),
+                ),
+              ),
               // Incoming call banner
               if (_incomingNumber != null) _buildIncomingBanner(),
 
@@ -358,6 +412,12 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
   }
 
   Widget _buildTitle() {
+    String formattedService = '';
+    if (_serviceName.isNotEmpty) {
+      formattedService =
+          _serviceName[0].toUpperCase() + _serviceName.substring(1);
+    }
+
     return Column(
       children: [
         const Text(
@@ -372,7 +432,7 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
         const SizedBox(height: 8),
         if (_serviceName.isNotEmpty)
           Text(
-            'Hello, $_serviceName 👋',
+            'Service: $formattedService',
             style: const TextStyle(
               fontSize: 15,
               color: Colors.white70,

@@ -4,6 +4,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 const bool useLocalBackend = false;
 const bool isEmulator = true;
 
+// /android/app/src/main/kotlin/com/example/call_recording_frontend/BackendApi.kt
+// make sure to update the url there as well
+
+
 String getBaseUrl() {
   if (useLocalBackend) {
     if (kIsWeb) {
