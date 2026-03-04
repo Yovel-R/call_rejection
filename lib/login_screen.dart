@@ -57,8 +57,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setString('user_phone', body['phoneNumber'] as String);
 
         if (mounted) {
-          // Replace login screen with home — no back stack
-          Navigator.of(context).pushReplacementNamed('/home');
+          // Navigate to permissions check before home
+          Navigator.of(context).pushReplacementNamed('/permissions');
         }
       } else {
         setState(() {

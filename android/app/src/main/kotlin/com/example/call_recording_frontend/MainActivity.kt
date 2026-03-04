@@ -62,7 +62,6 @@ class MainActivity : FlutterActivity() {
                 Log.d(TAG, "MethodChannel: ${call.method}")
                 when (call.method) {
                     "requestScreeningRole" -> {
-                        requestPermissionsIfNeeded()
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             val roleManager = getSystemService(RoleManager::class.java)
                             val available = roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)
@@ -84,15 +83,27 @@ class MainActivity : FlutterActivity() {
                         }
                     }
                     "isScreeningRoleHeld" -> {
-                        val permsOk = allPermissionsGranted()
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            val held = getSystemService(RoleManager::class.java)
-                                .isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
-                            Log.d(TAG, "isScreeningRoleHeld → roleHeld=$held permsOk=$permsOk")
-                            result.success(permsOk || held)
+                            val held = getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+                            Log.d(TAG, "isScreeningRoleHeld → roleHeld=$held")
+                            result.success(held)
                         } else {
-                            result.success(permsOk)
+                            result.success(allPermissionsGranted())
                         }
+                    }
+                    "requestBasicPermissions" -> {
+                        val missing = requiredPermissions.filter {
+                            ContextCompat.checkSelfPermission(this@MainActivity, it) != PackageManager.PERMISSION_GRANTED
+                        }
+                        if (missing.isNotEmpty()) {
+                            pendingResult = result
+                            ActivityCompat.requestPermissions(this@MainActivity, missing.toTypedArray(), REQUEST_CODE_PERMISSIONS)
+                        } else {
+                            result.success(true)
+                        }
+                    }
+                    "checkBasicPermissions" -> {
+                        result.success(allPermissionsGranted())
                     }
                     else -> result.notImplemented()
                 }
@@ -149,9 +160,12 @@ class MainActivity : FlutterActivity() {
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
             Log.d(TAG, "Permissions granted — registering receiver")
-            registerFallbackReceiverIfNeeded()
+            if (granted) registerFallbackReceiverIfNeeded()
+            pendingResult?.success(granted)
+            pendingResult = null
         }
     }
 

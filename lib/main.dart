@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
+import 'permission_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,8 +26,9 @@ class MainApp extends StatelessWidget {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      initialRoute: isLoggedIn ? '/home' : '/login',
+      initialRoute: isLoggedIn ? '/permissions' : '/login',
       routes: {
+        '/permissions': (_) => const PermissionScreen(),
         '/login': (_) => const LoginScreen(),
         '/home': (_) => const CallScreeningHome(),
       },
@@ -52,15 +54,11 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
   bool _checking = false;
   String _statusMessage = 'Checking status…';
 
-  // User info
   String _serviceName = '';
 
-  // Incoming call state
   String? _incomingNumber; // null = no active call
-  String _callState = ''; // RINGING / IDLE / OFFHOOK
   StreamSubscription? _callSub;
 
-  // Call history (in-session)
   final List<Map<String, String>> _callLog = [];
 
   @override
@@ -97,19 +95,17 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
     final map = Map<String, String>.from(event as Map);
     final state = map['state'] ?? '';
     final number = map['number'] ?? '';
-    final isUpdate = map['update'] == 'true'; // second RINGING with real number
+    final isUpdate = map['update'] == 'true';
     debugPrint(
       '[CallScreening] call event: state=$state number=$number update=$isUpdate',
     );
 
     setState(() {
-      _callState = state;
       if (state == 'RINGING') {
         final displayNumber = number.isEmpty ? 'Unknown number' : number;
         _incomingNumber = displayNumber;
 
         if (isUpdate) {
-          // Patch the most recent log entry — replace "Unknown number" with real number
           if (_callLog.isNotEmpty &&
               _callLog.first['number'] == 'Unknown number') {
             _callLog[0] = {
