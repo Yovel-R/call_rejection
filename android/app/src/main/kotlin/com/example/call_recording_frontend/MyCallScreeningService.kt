@@ -21,7 +21,7 @@ class MyCallScreeningService : CallScreeningService() {
 
         // Strategy 1: respond immediately (most reliable — no delay issues)
         // Uncomment this block and comment out Strategy 2 to test immediate reject:
-        /*
+        
         try {
             val response = CallResponse.Builder()
                 .setRejectCall(true)
@@ -33,26 +33,24 @@ class MyCallScreeningService : CallScreeningService() {
         } catch (e: Exception) {
             Log.e(TAG, "❌ Immediate respondToCall() failed: ${e.message}", e)
         }
-        */
+        
 
         // Strategy 2: Thread.sleep delay (avoids Handler main-looper timing issues)
-        Log.d(TAG, "⏳ Starting background thread for 3 s delay...")
-        Thread {
-            try {
-                Thread.sleep(3000)
-                Log.d(TAG, "⛔ Rejecting call from $number after 3 s")
-                val response = CallResponse.Builder()
-                    .setRejectCall(true)
-                    .setDisallowCall(true)
-                    .setSkipNotification(true)
-                    .build()
-                respondToCall(callDetails, response)
-                Log.d(TAG, "✅ respondToCall() completed successfully")
-            } catch (e: InterruptedException) {
-                Log.w(TAG, "⚠️ Thread interrupted before reject: ${e.message}")
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ respondToCall() failed: ${e.message}", e)
-            }
-        }.start()
+        // Log.d(TAG, "⏳ Starting background thread for 3 s delay...")
+        // Thread {
+        //     try {
+        //         Thread.sleep(3000)
+        //         Log.d(TAG, "⛔ Rejecting call from $number after 3 s")
+        //         val response = CallResponse.Builder()
+        //             .setRejectCall(true)
+        //             .setDisallowCall(true)
+        //             .setSkipNotification(true)
+        //             .build()
+        //             
+        //         // When using CallScreeningService, we must NOT be the ones ending
+        //         // the call from the fallback receiver. But the fallback receiver 
+        //         // handles the UI streaming. We leave the delay simply to not race.
+        //     } catch (e: Exception) {}
+        // }.start()
     }
 }
