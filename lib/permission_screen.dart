@@ -128,7 +128,7 @@ class _PermissionScreenState extends State<PermissionScreen>
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D2B),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -179,7 +179,7 @@ class _PermissionScreenState extends State<PermissionScreen>
                   subtitle: 'To allow the app to actually terminate calls',
                   isGranted: _roleGranted,
                 ),
-                const Spacer(),
+                const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: _allGranted ? _proceed : _requestPermissions,
                   style: ElevatedButton.styleFrom(
