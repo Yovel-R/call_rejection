@@ -163,14 +163,16 @@ class _PermissionScreenState extends State<PermissionScreen>
                   isGranted: _phoneGranted,
                 ),
                 const SizedBox(height: 16),
-                _buildPermissionRow(
-                  icon: Icons.battery_alert,
-                  title: 'Background Execution (Optional)',
-                  subtitle:
-                      'To ensure calls are rejected even when app is closed',
-                  isGranted: _batteryGranted,
-                ),
-                const SizedBox(height: 16),
+                if (!_batteryGranted) ...[
+                  _buildPermissionRow(
+                    icon: Icons.battery_alert,
+                    title: 'Background Execution (Optional)',
+                    subtitle:
+                        'To ensure calls are rejected even when app is closed',
+                    isGranted: _batteryGranted,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 _buildPermissionRow(
                   icon: Icons.call_end,
                   title: 'Caller ID & Spam',
