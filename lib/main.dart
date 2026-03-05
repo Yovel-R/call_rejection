@@ -315,19 +315,6 @@ class _CallScreeningHomeState extends State<CallScreeningHome>
                         _buildStatusCard(),
                         const SizedBox(height: 24),
                         _buildActionButton(),
-                        const SizedBox(height: 12),
-                        TextButton.icon(
-                          onPressed: _checkRole,
-                          icon: const Icon(
-                            Icons.refresh,
-                            color: Colors.white54,
-                            size: 18,
-                          ),
-                          label: const Text(
-                            'Refresh Status',
-                            style: TextStyle(color: Colors.white54),
-                          ),
-                        ),
                       ],
                       const SizedBox(height: 32),
                       if (_callLog.isNotEmpty) _buildCallLog(),
