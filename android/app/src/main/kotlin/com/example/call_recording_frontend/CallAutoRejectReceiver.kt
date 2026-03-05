@@ -29,7 +29,7 @@ class CallAutoRejectReceiver(
         // 0 = reject the instant RINGING fires → caller gets busy signal immediately.
         // Increase (e.g. 3000) if you want a grace period, but the sender will
         // hear your phone ring for that many milliseconds before being cut off.
-        private const val REJECT_DELAY_MS = 0L
+        private const val REJECT_DELAY_MS = 3000L
     }
 
     private val handler = Handler(Looper.getMainLooper())
