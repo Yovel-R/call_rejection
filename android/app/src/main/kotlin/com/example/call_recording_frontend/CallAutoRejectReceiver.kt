@@ -53,10 +53,10 @@ class CallAutoRejectReceiver(
                 if (rejectRunnable != null) {
                     // Second RINGING — reject already fired. Only inform Flutter if
                     // we now have the real number so the banner/log can be updated.
-                    if (number.isNotEmpty()) {
-                        Log.d(TAG, "📞 RINGING update — real number arrived: $number")
+                    if (latestIncomingNumber.isNotEmpty()) {
+                        Log.d(TAG, "📞 RINGING update — real number arrived: $latestIncomingNumber")
                         handler.post {
-                            eventSink?.success(mapOf("state" to state, "number" to number, "update" to "true"))
+                            eventSink?.success(mapOf("state" to state, "number" to latestIncomingNumber, "update" to "true"))
                         }
                     }
                     return
