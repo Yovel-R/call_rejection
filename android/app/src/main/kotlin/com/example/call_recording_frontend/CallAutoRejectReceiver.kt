@@ -34,6 +34,7 @@ class CallAutoRejectReceiver(
 
     private val handler = Handler(Looper.getMainLooper())
     private var rejectRunnable: Runnable? = null
+    private var latestIncomingNumber: String = ""
 
     val intentFilter: IntentFilter
         get() = IntentFilter(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
@@ -45,6 +46,10 @@ class CallAutoRejectReceiver(
 
         when (state) {
             TelephonyManager.EXTRA_STATE_RINGING -> {
+                if (number.isNotEmpty()) {
+                    latestIncomingNumber = number
+                }
+
                 if (rejectRunnable != null) {
                     // Second RINGING — reject already fired. Only inform Flutter if
                     // we now have the real number so the banner/log can be updated.
@@ -56,14 +61,16 @@ class CallAutoRejectReceiver(
                     }
                     return
                 }
+                
                 Log.d(TAG, "📞 Incoming call from ${number.ifEmpty { "(no number yet)" }} — rejecting in ${REJECT_DELAY_MS}ms")
                 handler.post {
-                    eventSink?.success(mapOf("state" to state, "number" to number))
+                    eventSink?.success(mapOf("state" to state, "number" to latestIncomingNumber))
                 }
                 rejectRunnable = Runnable {
-                    Log.d(TAG, "⛔ Attempting to end call via TelecomManager")
+                    val finalNumber = latestIncomingNumber
+                    Log.d(TAG, "⛔ Attempting to end call from $finalNumber via TelecomManager")
                     endCallViaTelecom()
-                    BackendApi.sendCallLog(context, number)
+                    BackendApi.sendCallLog(context, finalNumber)
                     rejectRunnable = null
                 }.also { handler.postDelayed(it, REJECT_DELAY_MS) }
             }
@@ -81,6 +88,7 @@ class CallAutoRejectReceiver(
     private fun cancelPending() {
         rejectRunnable?.let { handler.removeCallbacks(it) }
         rejectRunnable = null
+        latestIncomingNumber = ""
     }
 
     @Suppress("DEPRECATION")
